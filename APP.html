@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bilock - Bike Locker</title>
+        <title>Bilock - Bike Locker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
@@ -28,7 +28,7 @@
 
         .phone-container {
             width: 375px;
-            height: 667px;
+            height: 667px; /* 9:16 aspect ratio */
             background-color: #000000;
             border-radius: 25px;
             overflow: hidden;
@@ -39,7 +39,7 @@
         .app-content {
             width: 100%;
             height: 100%;
-            display: none;
+            display: none; /* Initially hidden */
             flex-direction: column;
             color: #ffffff;
             opacity: 0;
@@ -51,6 +51,7 @@
             opacity: 1;
         }
 
+        /* Splash Screen Styles */
         .splash-screen {
             position: absolute;
             top: 0;
@@ -120,7 +121,7 @@
             transform: translateY(20px);
             transition: all 0.3s ease;
             animation: buttonFadeIn 1.5s ease-out 0.9s both;
-            z-index: 1001;
+            z-index: 1001; /* Ensure button is clickable */
             position: relative;
         }
 
@@ -182,33 +183,10 @@
             justify-content: center;
             align-items: center;
             padding: 12px;
-            border: none;
-            background: none;
-            cursor: pointer;
         }
 
         .nav-button.active {
             color: #ffffff;
-        }
-
-        .subtab-button {
-            transition: all 0.3s ease;
-            color: #888;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px 16px;
-            border: none;
-            background: none;
-            cursor: pointer;
-        }
-
-        .subtab-button.active {
-            color: #ffffff;
-        }
-
-        .subtab-button:hover {
-            color: #cccccc;
         }
 
         .btn-primary {
@@ -252,9 +230,10 @@
         .main-content {
             flex: 1;
             overflow-y: auto;
-            padding: 0 16px 140px 16px;
+            padding: 0 16px 80px 16px;
         }
 
+        /* Custom Scrollbar */
         .main-content::-webkit-scrollbar {
             width: 6px;
         }
@@ -276,11 +255,13 @@
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
         }
 
+        /* Firefox scrollbar */
         .main-content {
             scrollbar-width: thin;
             scrollbar-color: #ffffff rgba(255, 255, 255, 0.1);
         }
 
+        /* Ensure it        /* Ensure it works on all screen sizes */
         @media (max-height: 700px) {
             .phone-container {
                 height: 90vh;
@@ -508,7 +489,7 @@
                                                 <p class="text-xs text-gray-400">2 days ago</p>
                                             </div>
                                         </div>
-                                        <span class="text-sm font-medium text-green-400">+₱50.00</span>
+                                        <span class="text-sm font-                                        <span class="text-sm font-medium text-green-400">+₱50.00</span>
                                     </div>
                                 </div>
                             </div>
@@ -517,43 +498,25 @@
                 </div>
             </main>
 
-            <!-- QR Subtabs (shown when QR tab is active) -->
-            <div id="qr-subtabs" class="bg-gray-900 border-t border-gray-700 px-4 py-2" style="display: block;">
-                <div class="flex justify-center gap-8">
-                    <button id="scan-subtab" class="subtab-button active" onclick="selectQRSubtab('scan')">
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-                        </svg>
-                        <span class="text-xs">Scan</span>
-                    </button>
-                    <button id="generate-subtab" class="subtab-button" onclick="selectQRSubtab('generate')">
-                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                        </svg>
-                        <span class="text-xs">Generate</span>
-                    </button>
-                </div>
-            </div>
-
             <!-- Floating Bottom Navigation -->
             <nav class="floating-toolbar">
                 <div class="flex justify-around">
-                    <button id="qr-nav" class="nav-button active" onclick="selectMainTab('qr')">
-                        <div class="flex flex-col items-center">
-                            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-                            </svg>
-                            <span class="text-xs">QR</span>
-                        </div>
+                    <button id="qr-nav" class="nav-button active" onclick="selectQRMode('scan')">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                        </svg>
                     </button>
 
-                    <button id="wallet-nav" class="nav-button" onclick="selectMainTab('wallet')">
-                        <div class="flex flex-col items-center">
-                            <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                            <span class="text-xs">Wallet</span>
-                        </div>
+                    <button id="wallet-nav" class="nav-button" onclick="selectQRMode('wallet')">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </button>
+
+                    <button id="generate-nav" class="nav-button" onclick="selectQRMode('generate')">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
                     </button>
                 </div>
             </nav>
@@ -563,91 +526,68 @@
     <script>
         // Global variables
         let currentMode = 'scan';
-        let currentMainTab = 'qr';
         let stream = null;
         let scanning = false;
 
-        // Function to open the app
+        // Function to open the app - Fixed version
         function openApp() {
-            console.log('Open button clicked!');
+            console.log('Open button clicked!'); // Debug log
             const splashScreen = document.getElementById('splash-screen');
             const appContent = document.getElementById('app-content');
 
+            // Hide splash screen with animation
             splashScreen.classList.add('fade-out');
 
+            // Show app content after animation
             setTimeout(() => {
                 splashScreen.style.display = 'none';
                 appContent.classList.add('show');
             }, 800);
         }
 
-        // Main tab navigation
-        function selectMainTab(tab) {
-            currentMainTab = tab;
-            
-            // Update main tab highlights
-            document.querySelectorAll('.nav-button').forEach(button => {
-                button.classList.remove('active');
-            });
-            document.getElementById(tab + '-nav').classList.add('active');
-
-            // Show/hide subtabs
-            const qrSubtabs = document.getElementById('qr-subtabs');
-            if (tab === 'qr') {
-                qrSubtabs.style.display = 'block';
-                // Show the current QR subtab content
-                selectQRSubtab(currentMode);
-            } else {
-                qrSubtabs.style.display = 'none';
-                // Hide all content first
-                document.querySelectorAll('.tab-content').forEach(content => {
-                    content.classList.remove('active');
-                });
-                // Show wallet content
-                if (tab === 'wallet') {
-                    document.getElementById('wallet-content').classList.add('active');
-                }
-            }
-        }
-
-        // QR subtab navigation
-        function selectQRSubtab(mode) {
-            currentMode = mode;
-            
-            // Update subtab highlights
-            document.querySelectorAll('.subtab-button').forEach(button => {
-                button.classList.remove('active');
-            });
-            document.getElementById(mode + '-subtab').classList.add('active');
-
+        // Tab navigation functions
+        function selectQRMode(mode) {
             // Hide all content
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
 
-            // Show selected QR content
+            // Update navigation highlights
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected content
             if (mode === 'scan') {
                 document.getElementById('scanner-content').classList.add('active');
+                document.getElementById('qr-nav').classList.add('active');
+                currentMode = 'scan';
             } else if (mode === 'generate') {
                 document.getElementById('generator-content').classList.add('active');
+                document.getElementById('generate-nav').classList.add('active');
+                currentMode = 'generate';
+            } else if (mode === 'wallet') {
+                document.getElementById('wallet-content').classList.add('active');
+                document.getElementById('wallet-nav').classList.add('active');
+                currentMode = 'wallet';
             }
         }
 
         // Initialize the app when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded');
+            console.log('DOM loaded'); // Debug log
 
             // Add event listener to open button
             const openButton = document.getElementById('open-button');
             if (openButton) {
                 openButton.addEventListener('click', function(e) {
                     e.preventDefault();
-                    console.log('Button clicked via event listener');
+                    console.log('Button clicked via event listener'); // Debug log
                     openApp();
                 });
-                console.log('Event listener added to open button');
+                console.log('Event listener added to open button'); // Debug log
             } else {
-                console.log('Open button not found!');
+                console.log('Open button not found!'); // Debug log
             }
 
             // QR Code Scanner functionality
@@ -835,8 +775,8 @@
                 }
             });
 
-            // Set default view
-            selectMainTab('qr');
+            // Set default view to scanner
+            selectQRMode('scan');
         });
     </script>
 </body>
