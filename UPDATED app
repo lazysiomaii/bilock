@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bilock - QR Wallet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .phone-container {
+            width: 375px;
+            height: 667px;
+            background-color: #000000;
+            border-radius: 25px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .app-content {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            color: #ffffff;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+        }
+
+        .app-content.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* Splash Screen Styles */
+        .splash-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: all 0.8s ease-in-out;
+        }
+
+        .splash-screen.fade-out {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: logoAppear 1.5s ease-out;
+        }
+
+        .logo-circle {
+            width: 120px;
+            height: 120px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            animation: logoPulse 2s ease-in-out infinite;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        }
+
+        .app-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 10px;
+            animation: titleSlide 1.5s ease-out 0.3s both;
+        }
+
+        .app-subtitle {
+            font-size: 1rem;
+            color: #888;
+            animation: subtitleSlide 1.5s ease-out 0.6s both;
+            margin-bottom: 40px;
+        }
+
+        .open-button {
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+            animation: buttonFadeIn 1.5s ease-out 0.9s both;
+            z-index: 1001;
+            position: relative;
+        }
+
+        .open-button:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .open-button:active {
+            transform: translateY(0px);
+            background: #e0e0e0;
+        }
+
+        @keyframes logoAppear {
+            0% { opacity: 0; transform: scale(0.5) rotate(-180deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(255, 255, 255, 0.3); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(255, 255, 255, 0.5); }
+        }
+
+        @keyframes titleSlide {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes subtitleSlide {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes buttonFadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Navigation with Background Glow */
+        .floating-toolbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 35px;
+            padding: 8px;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 170px;
+            height: 66px;
+        }
+
+        .nav-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+            padding: 0 5px;
+        }
+
+        .nav-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            background: transparent;
+            border: none;
+            color: #666;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Background glow effect */
+        .nav-button.active {
+            color: #000000;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 50%, rgba(255, 255, 255, 0.3) 100%);
+            animation: backgroundGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes backgroundGlow {
+            0% {
+                background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.2) 100%);
+                box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+            }
+            100% {
+                background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.4) 100%);
+                box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+            }
+        }
+
+        .nav-button:hover:not(.active) {
+            color: #999;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Balance animation */
+        .balance-animate {
+            animation: balanceUpdate 0.6s ease-out;
+        }
+
+        @keyframes balanceUpdate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); color: #22c55e; }
+            100% { transform: scale(1); }
+        }
+
+        .balance-animate.subtract {
+            animation: balanceSubtract 0.6s ease-out;
+        }
+
+        @keyframes balanceSubtract {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); color: #ef4444; }
+            100% { transform: scale(1); }
+        }
+
+        .btn-primary {
+            background: #333;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            background: #444;
+        }
+
+        .wallet-card {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid #333;
+        }
+
+        .transaction-item {
+            border-bottom: 1px solid #333;
+            padding: 12px 0;
+            animation: slideInTransaction 0.3s ease-out;
+        }
+
+        .transaction-item:last-child {
+            border-bottom: none;
+        }
+
+        @keyframes slideInTransaction {
+            0% { opacity: 0; transform: translateX(-20px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .test-btn {
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .test-btn.add {
+            background: #22c55e;
+            color: white;
+        }
+
+        .test-btn.subtract {
+            background: #ef4444;
+            color: white;
+        }
+
+        .test-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .test-btn:active {
+            transform: translateY(0px);
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px 90px 16px;
+        }
+
+        .main-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .main-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #ffffff, #cccccc);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+
+        .main-content::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(45deg, #cccccc, #ffffff);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .main-content {
+            scrollbar-width: thin;
+            scrollbar-color: #ffffff rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 400px) {
+            .phone-container {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            html, body {
+                background-color: #000000;
+            }
+
+            .floating-toolbar {
+                bottom: 10px;
+            }
+        }
+
+        @media (max-height: 700px) {
+            .phone-container {
+                height: 90vh;
+                width: calc(90vh * 9/16);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="phone-container">
+        <div class="splash-screen" id="splash-screen">
+            <div class="logo-container">
+                <div class="logo-circle">
+                    <svg class="w-16 h-16 text-black" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 5.5V7H9V5.5L3 7V9L9 10.5V12L3 13.5V15.5L9 14V16H15V14L21 15.5V13.5L15 12V10.5L21 9Z"/>
+                    </svg>
+                </div>
+                <h1 class="app-title">Bilock</h1>
+                <p class="app-subtitle">QR Wallet</p>
+                <button class="open-button" id="open-button">Open</button>
+            </div>
+        </div>
+
+        <div class="app-content" id="app-content">
+            <header class="bg-transparent py-4 px-4 sticky top-0 z-10">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 5.5V7H9V5.5L3 7V9L9 10.5V12L3 13.5V15.5L9 14V16H15V14L21 15.5V13.5L15 12V10.5L21 9Z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl font-bold text-white">Bilock</h1>
+                </div>
+            </header>
+
+            <main class="main-content">
+                <div id="scanner-content" class="tab-content active">
+                    <div class="space-y-4">
+                        <div class="text-center mb-4">
+                            <h2 class="text-lg font-semibold text-white mb-1">Scan QR Code</h2>
+                            <p class="text-gray-400 text-sm">Point your camera at a QR code to scan</p>
+                        </div>
+
+                        <div class="relative">
+                            <video id="preview" class="w-full h-48 object-cover bg-gray-800 rounded-2xl" autoplay muted playsinline></video>
+                            <canvas id="scanner-canvas" class="absolute inset-0 w-full h-full" style="display: none;"></canvas>
+
+                            <div class="absolute top-3 right-3">
+                                <div class="flex items-center bg-black/80 text-white px-3 py-1 rounded-full text-xs">
+                                    <div id="camera-status" class="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                                    <span id="status-text">Camera off</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3">
+                            <button id="start-scan" class="btn-primary px-4 py-3 rounded-xl font-medium flex-1 flex items-center justify-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                </svg>
+                                Start
+                            </button>
+                            <button id="stop-scan" class="bg-gray-800 text-gray-400 px-4 py-3 rounded-xl font-medium flex-1 flex items-center justify-center" disabled>
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                                </svg>
+                                Stop
+                            </button>
+                        </div>
+
+                        <div class="bg-gray-900 rounded-2xl p-4">
+                            <h3 class="text-sm font-medium text-white mb-3">Scan Results</h3>
+                            <div class="bg-gray-800 p-3 rounded-xl min-h-[60px] flex items-center justify-center">
+                                <div id="scan-result" class="text-center text-gray-400 text-sm">
+                                    <p>No QR code detected</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 mt-3">
+                                <button id="copy-result" class="bg-gray-800 text-gray-400 px-3 py-2 rounded-lg text-sm font-medium flex-1" disabled>
+                                    Copy
+                                </button>
+                                <button id="open-url" class="bg-gray-800 text-gray-400 px-3 py-2 rounded-lg text-sm font-medium flex-1" disabled>
+                                    Open URL
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="generator-content" class="tab-content">
+                    <div class="space-y-4">
+                        <div class="text-center mb-4">
+                            <h2 class="text-lg font-semibold text-white mb-1">Generate QR Code</h2>
+                            <p class="text-gray-400 text-sm">Create QR codes from text or URLs</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-white mb-2">Content to encode</label>
+                                <textarea
+                                    id="qr-content"
+                                    placeholder="Enter text, URL, or any content..."
+                                    class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:ring-2 focus:ring-white focus:border-transparent transition-all duration-200 resize-none text-white placeholder-gray-500"
+                                    rows="3"
+                                ></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-white mb-2">QR Code Size</label>
+                                <select id="qr-size" class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:ring-2 focus:ring-white focus:border-transparent transition-all duration-200 text-white">
+                                    <option value="200">Medium (200×200)</option>
+                                    <option value="300">Large (300×300)</option>
+                                    <option value="150">Small (150×150)</option>
+                                </select>
+                            </div>
+
+                            <button id="generate-qr" class="btn-primary w-full py-3 rounded-xl font-medium">
+                                Generate QR Code
+                            </button>
+                        </div>
+
+                        <div class="bg-gray-900 rounded-2xl p-4">
+                            <h3 class="text-sm font-medium text-white mb-3">Generated QR Code</h3>
+                            <div class="bg-gray-800 p-4 rounded-xl flex items-center justify-center min-h-[150px]">
+                                <div id="qr-output" class="text-center">
+                                    <p class="text-gray-500 text-xs">QR code will appear here</p>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 mt-3">
+                                <button id="download-qr" class="bg-gray-800 text-gray-400 px-3 py-2 rounded-lg text-sm font-medium flex-1" disabled>
+                                    Download
+                                </button>
+                                <button id="copy-qr" class="bg-gray-800 text-gray-400 px-3 py-2 rounded-lg text-sm font-medium flex-1" disabled>
+                                    Copy Image
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="wallet-content" class="tab-content">
+                    <div class="space-y-6">
+                        <div class="text-center">
+                            <h2 class="text-lg font-semibold text-white mb-2">My Wallet</h2>
+                            <p class="text-gray-400 text-sm">Manage your PHP balance</p>
+                        </div>
+
+                        <div class="wallet-card">
+                            <div class="text-center">
+                                <p class="text-gray-400 text-sm mb-2">Total Balance</p>
+                                <h2 class="text-3xl font-bold text-white mb-1" id="wallet-balance">₱150.00</h2>
+                                <p class="text-gray-500 text-xs">Current balance</p>
+                            </div>
+
+                            <div class="flex justify-center mt-6">
+                                <button class="bg-white text-black px-6 py-2 rounded-xl text-sm font-medium" id="add-funds">
+                                    Add Funds
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="test-buttons">
+                            <button class="test-btn add" id="add-5">Add ₱5</button>
+                            <button class="test-btn subtract" id="subtract-5">Deduct ₱5</button>
+                        </div>
+
+                        <div class="bg-gray-900 rounded-2xl p-4">
+                            <h3 class="text-sm font-medium text-white mb-3">Recent Transactions</h3>
+                            <div class="space-y-3" id="transactions-list">
+                                <!-- Transactions will be dynamically added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <div class="floating-toolbar">
+                <div class="nav-switch">
+                    <button id="qr-nav" class="nav-button active" data-position="0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
+                        </svg>
+                    </button>
+
+                    <button id="wallet-nav" class="nav-button" data-position="1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </button>
+
+                    <button id="generate-nav" class="nav-button" data-position="2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentMode = 'scan';
+        let stream = null;
+        let scanning = false;
+        let transactions = [];
+
+        // Function to open the app
+        function openApp() {
+            const splashScreen = document.getElementById('splash-screen');
+            const appContent = document.getElementById('app-content');
+
+            splashScreen.classList.add('fade-out');
+
+            setTimeout(() => {
+                splashScreen.style.display = 'none';
+                appContent.classList.add('show');
+                loadInitialTransactions();
+            }, 800);
+        }
+
+        // Load initial transactions
+        function loadInitialTransactions() {
+            transactions = [
+                {
+                    type: 'locker_access',
+                    amount: -5.00,
+                    description: 'Locker Access',
+                    timestamp: new Date().toISOString()
+                },
+                {
+                    type: 'top_up',
+                    amount: 100.00,
+                    description: 'Top-up',
+                    timestamp: new Date(Date.now() - 86400000).toISOString()
+                },
+                {
+                    type: 'locker_access',
+                    amount: -5.00,
+                    description: 'Locker Access',
+                    timestamp: new Date(Date.now() - 172800000).toISOString()
+                }
+            ];
+            updateTransactionsList();
+        }
+
+        // Add transaction and update list
+        function addTransaction(type, amount, description) {
+            const transaction = {
+                type: type,
+                amount: amount,
+                description: description,
+                timestamp: new Date().toISOString()
+            };
+
+            transactions.unshift(transaction);
+            updateTransactionsList();
+        }
+
+        // Update transactions list in UI
+        function updateTransactionsList() {
+            const transactionsList = document.getElementById('transactions-list');
+            transactionsList.innerHTML = '';
+
+            transactions.slice(0, 10).forEach(transaction => {
+                const isPositive = transaction.amount > 0;
+                const date = new Date(transaction.timestamp);
+                const timeString = date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const dateString = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                });
+
+                const transactionElement = document.createElement('div');
+                transactionElement.className = 'transaction-item';
+                transactionElement.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 ${isPositive ? 'bg-green-500/20' : 'bg-red-500/20'} rounded-full flex items-center justify-center mr-3">
+                                <svg class="w-4 h-4 ${isPositive ? 'text-green-500' : 'text-red-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isPositive ? 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z' : 'M12 19l9 2-9-18-9 18 9-2zm0 0v-8'}"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-white">${transaction.description}</p>
+                                <p class="text-xs text-gray-400">${dateString}, ${timeString}</p>
+                            </div>
+                        </div>
+                        <span class="text-sm font-medium ${isPositive ? 'text-green-400' : 'text-red-400'}">
+                            ${isPositive ? '+' : ''}₱${Math.abs(transaction.amount).toFixed(2)}
+                        </span>
+                    </div>
+                `;
+                transactionsList.appendChild(transactionElement);
+            });
+        }
+
+        // Tab navigation functions with background glow effect
+        function selectQRMode(mode) {
+            // Hide all content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Update navigation highlights
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected content and add background glow effect
+            if (mode === 'scan') {
+                document.getElementById('scanner-content').classList.add('active');
+                document.getElementById('qr-nav').classList.add('active');
+                currentMode = 'scan';
+            } else if (mode === 'wallet') {
+                document.getElementById('wallet-content').classList.add('active');
+                document.getElementById('wallet-nav').classList.add('active');
+                currentMode = 'wallet';
+            } else if (mode === 'generate') {
+                document.getElementById('generator-content').classList.add('active');
+                document.getElementById('generate-nav').classList.add('active');
+                currentMode = 'generate';
+            }
+        }
+
+        // Animated balance update function
+        function updateBalance(amount, isSubtract = false) {
+            const balanceElement = document.getElementById('wallet-balance');
+            const currentBalance = parseFloat(balanceElement.textContent.replace('₱', ''));
+            const newBalance = Math.max(0, currentBalance + amount);
+
+            // Add animation class
+            balanceElement.classList.add('balance-animate');
+            if (isSubtract) {
+                balanceElement.classList.add('subtract');
+            }
+
+            // Update balance with animation
+            setTimeout(() => {
+                balanceElement.textContent = `₱${newBalance.toFixed(2)}`;
+            }, 300);
+
+            // Remove animation class
+            setTimeout(() => {
+                balanceElement.classList.remove('balance-animate', 'subtract');
+            }, 600);
+
+            return newBalance;
+        }
+
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Open button functionality
+            const openButton = document.getElementById('open-button');
+            if (openButton) {
+                openButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openApp();
+                });
+            }
+
+            // Navigation button functionality
+            document.getElementById('qr-nav').addEventListener('click', () => selectQRMode('scan'));
+            document.getElementById('wallet-nav').addEventListener('click', () => selectQRMode('wallet'));
+            document.getElementById('generate-nav').addEventListener('click', () => selectQRMode('generate'));
+
+            // QR Code Scanner functionality
+            const video = document.getElementById('preview');
+            const canvas = document.getElementById('scanner-canvas');
+            const ctx = canvas.getContext('2d');
+            const startButton = document.getElementById('start-scan');
+            const stopButton = document.getElementById('stop-scan');
+            const scanResult = document.getElementById('scan-result');
+            const copyButton = document.getElementById('copy-result');
+            const openUrlButton = document.getElementById('open-url');
+            const cameraStatus = document.getElementById('camera-status');
+            const statusText = document.getElementById('status-text');
+
+            startButton.addEventListener('click', async () => {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: "environment" }
+                    });
+                    video.srcObject = stream;
+                    startButton.disabled = true;
+                    stopButton.disabled = false;
+                    startButton.classList.add('opacity-50');
+                    stopButton.classList.remove('bg-gray-800', 'text-gray-400');
+                    stopButton.classList.add('btn-primary');
+                    cameraStatus.classList.remove('bg-red-500');
+                    cameraStatus.classList.add('bg-green-500');
+                    statusText.textContent = 'Scanning...';
+                    scanning = true;
+                    scanFrame();
+                } catch (error) {
+                    console.error('Error accessing camera:', error);
+                    statusText.textContent = 'Camera error';
+                    alert('Cannot access camera. Please check permissions.');
+                }
+            });
+
+            stopButton.addEventListener('click', () => {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    video.srcObject = null;
+                    startButton.disabled = false;
+                    stopButton.disabled = true;
+                    startButton.classList.remove('opacity-50');
+                    stopButton.classList.remove('btn-primary');
+                    stopButton.classList.add('bg-gray-800', 'text-gray-400');
+                    cameraStatus.classList.remove('bg-green-500');
+                    cameraStatus.classList.add('bg-red-500');
+                    statusText.textContent = 'Camera off';
+                    scanning = false;
+                }
+            });
+
+            function scanFrame() {
+                if (!scanning) return;
+
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                    if (code) {
+                        // Check if it's a locker access code
+                        if (code.data.includes('bilock-locker-')) {
+                            handleLockerAccess(code.data);
+                        }
+
+                        scanResult.innerHTML = `
+                            <div class="text-center">
+                                <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </div>
+                                <p class="text-green-400 font-medium mb-1">QR Code Detected!</p>
+                                <div class="bg-gray-700 p-2 rounded border break-words text-xs font-mono text-white">${code.data.substring(0, 50)}${code.data.length > 50 ? '...' : ''}</div>
+                            </div>
+                        `;
+                        copyButton.disabled = false;
+                        copyButton.classList.remove('bg-gray-800', 'text-gray-400');
+                        copyButton.classList.add('bg-white', 'text-black');
+
+                        // Check if it's a URL
+                        try {
+                            const url = new URL(code.data);
+                            openUrlButton.disabled = false;
+                            openUrlButton.classList.remove('bg-gray-800', 'text-gray-400');
+                            openUrlButton.classList.add('bg-white', 'text-black');
+                            openUrlButton.onclick = () => window.open(code.data, '_blank');
+                        } catch {
+                            openUrlButton.disabled = true;
+                            openUrlButton.classList.remove('bg-white', 'text-black');
+                            openUrlButton.classList.add('bg-gray-800', 'text-gray-400');
+                        }
+                    }
+                }
+
+                requestAnimationFrame(scanFrame);
+            }
+
+            // Handle locker access with transaction logging
+            function handleLockerAccess(qrData) {
+                const currentBalance = parseFloat(document.getElementById('wallet-balance').textContent.replace('₱', ''));
+                const lockerFee = 5.00;
+
+                if (currentBalance >= lockerFee) {
+                    updateBalance(-lockerFee, true);
+                    addTransaction('locker_access', -lockerFee, 'Locker Access');
+                    alert('🔓 Locker Unlocked! ₱5.00 deducted from your wallet.');
+                } else {
+                    alert('❌ Insufficient balance! Please add funds to your wallet.');
+                }
+            }
+
+            copyButton.addEventListener('click', () => {
+                const text = scanResult.querySelector('.font-mono')?.textContent || '';
+                if (text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        const originalText = copyButton.textContent;
+                        copyButton.textContent = 'Copied!';
+                        setTimeout(() => {
+                            copyButton.textContent = originalText;
+                        }, 2000);
+                    });
+                }
+            });
+
+            // QR Code Generator functionality
+            const qrContent = document.getElementById('qr-content');
+            const qrSize = document.getElementById('qr-size');
+            const generateButton = document.getElementById('generate-qr');
+            const qrOutput = document.getElementById('qr-output');
+            const downloadButton = document.getElementById('download-qr');
+            const copyQrButton = document.getElementById('copy-qr');
+
+            generateButton.addEventListener('click', () => {
+                const content = qrContent.value.trim();
+                const size = parseInt(qrSize.value);
+
+                if (!content) {
+                    alert('Please enter some content to generate a QR code.');
+                    return;
+                }
+
+                QRCode.toDataURL(content, {
+                    width: size,
+                    height: size,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#ffffff'
+                    }
+                }, (err, url) => {
+                    if (err) {
+                        console.error(err);
+                        alert('Error generating QR code: ' + err.message);
+                        return;
+                    }
+
+                    qrOutput.innerHTML = `
+                        <div class="text-center">
+                            <img src="${url}" alt="Generated QR code" class="mx-auto rounded-lg border-2 border-white" style="width: 120px; height: 120px;" />
+                            <p class="text-gray-400 text-xs mt-2">${size}×${size} QR Code</p>
+                        </div>
+                    `;
+
+                    downloadButton.disabled = false;
+                    copyQrButton.disabled = false;
+                    downloadButton.classList.remove('bg-gray-800', 'text-gray-400');
+                    copyQrButton.classList.remove('bg-gray-800', 'text-gray-400');
+                    downloadButton.classList.add('bg-white', 'text-black');
+                    copyQrButton.classList.add('bg-white', 'text-black');
+
+                    downloadButton.onclick = () => {
+                        const link = document.createElement('a');
+                        link.download = 'bilock-qrcode.png';
+                        link.href = url;
+                        link.click();
+                    };
+
+                    copyQrButton.onclick = async () => {
+                        try {
+                            const response = await fetch(url);
+                            const blob = await response.blob();
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            const originalText = copyQrButton.textContent;
+                            copyQrButton.textContent = 'Copied!';
+                            setTimeout(() => {
+                                copyQrButton.textContent = originalText;
+                            }, 2000);
+                        } catch (err) {
+                            console.error('Failed to copy image: ', err);
+                            alert('Could not copy image to clipboard. This feature may not be supported in your browser.');
+                        }
+                    };
+                });
+            });
+
+            // Wallet functionality with animations and transaction logging
+            document.getElementById('add-funds').addEventListener('click', () => {
+                const amount = prompt('Enter amount to add (₱):');
+                if (amount && !isNaN(amount) && parseFloat(amount) > 0) {
+                    const addAmount = parseFloat(amount);
+                    updateBalance(addAmount);
+                    addTransaction('top_up', addAmount, 'Manual Top-up');
+                    alert(`✅ Successfully added ₱${addAmount.toFixed(2)} to your wallet!`);
+                }
+            });
+
+            // Test buttons for adding and deducting ₱5 with animations
+            document.getElementById('add-5').addEventListener('click', () => {
+                updateBalance(5);
+                addTransaction('test_add', 5, 'Test Add ₱5');
+                alert('✅ Added ₱5.00 to your wallet!');
+            });
+
+            document.getElementById('subtract-5').addEventListener('click', () => {
+                const currentBalance = parseFloat(document.getElementById('wallet-balance').textContent.replace('₱', ''));
+                if (currentBalance >= 5) {
+                    updateBalance(-5, true);
+                    addTransaction('test_subtract', -5, 'Test Deduct ₱5');
+                    alert('✅ Deducted ₱5.00 from your wallet!');
+                } else {
+                    alert('❌ Insufficient balance! Cannot deduct ₱5.00');
+                }
+            });
+
+            // Set default view to scanner
+            selectQRMode('scan');
+        });
+    </script>
+</body>
+</html>
